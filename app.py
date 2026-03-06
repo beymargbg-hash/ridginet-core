@@ -1,16 +1,10 @@
+import os
 import sqlite3
 from flask import Flask, render_template, request, jsonify
-import routeros_api
-import os
 
-# Configuramos Flask para que busque el HTML en la carpeta principal
-app = Flask(__name__, template_folder='.')
+app = Flask(__name__)
 
-@app.route('/')
-def index():
-    # Buscamos el archivo index.html directamente
-    return render_template('index.html')
-
+# --- CONFIGURACIÓN DE BASE DE DATOS ---
 def init_db():
     conn = sqlite3.connect('elohim_system.db')
     cursor = conn.cursor()
@@ -31,7 +25,14 @@ def init_db():
 
 init_db()
 
+# --- RUTA PRINCIPAL ---
+@app.route('/')
+def index():
+    # Flask buscará automáticamente index.html dentro de la carpeta 'templates'
+    return render_template('index.html')
+
 if __name__ == '__main__':
+    # Render usa una variable de entorno llamada PORT
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
 @app.route('/api/sincronizar', methods=['POST'])
