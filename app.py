@@ -1,14 +1,19 @@
 import sqlite3
-from flask import Flask, request, jsonify
+from flask import Flask, render_template, request, jsonify
 import routeros_api
+import os
 
-app = Flask(__name__)
+# Configuramos Flask para que busque el HTML en la carpeta principal
+app = Flask(__name__, template_folder='.')
 
-# --- CONFIGURACIÓN DE BASE DE DATOS LOCAL ---
+@app.route('/')
+def index():
+    # Buscamos el archivo index.html directamente
+    return render_template('index.html')
+
 def init_db():
     conn = sqlite3.connect('elohim_system.db')
     cursor = conn.cursor()
-    # Tabla de abonados: vincula MikroTik con la App
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS abonados (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -16,7 +21,7 @@ def init_db():
             dni TEXT UNIQUE,
             ip_mikrotik TEXT,
             perfil_mikrotik TEXT,
-            estado TEXT DEFAULT 'Activo',
+            estado TEXT DEFAULT 'ACTIVO',
             ultimo_pago TEXT,
             metodo_pago TEXT
         )
@@ -24,16 +29,11 @@ def init_db():
     conn.commit()
     conn.close()
 
-# --- CONEXIÓN DINÁMICA AL MIKROTIK ---
-def get_mt_connection(host, user, password):
-    try:
-        connection = routeros_api.RouterOsApiPool(host, username=user, password=password, plaintext_login=True)
-        return connection.get_api()
-    except Exception as e:
-        print(f"Error de conexión: {e}")
-        return None
+init_db()
 
-# --- LÓGICA DE SINCRONIZACIÓN (BARRIDO INICIAL) ---
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
 @app.route('/api/sincronizar', methods=['POST'])
 def sincronizar_wisp():
     data = request.json
